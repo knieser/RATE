@@ -12,10 +12,9 @@ makeBayesPlot = function(N,p,a1,tau,var_vals,rho_vals){
   strat_output <- estStratified(smp,"trt","g",Ymodel)
   strat_est = strat_output$estimates[,"estimate"]
   strat_var = (strat_output$estimates[,"std_err"])^2
-  varY = strat_output$resid_var
-  
+
   # synthetic sample estimates
-  est = estSynthetic_bayes(strat_est, strat_var, varY, var_vals, rho_vals)
+  est = estSynthetic_bayes(strat_est, strat_var, var_vals, rho_vals)
 
   # organize plot data
   plot_data = data.frame(
@@ -28,7 +27,7 @@ makeBayesPlot = function(N,p,a1,tau,var_vals,rho_vals){
   fig <- ggplot(data=plot_data, aes(x=sigma, y=q, group=group)) +
     geom_line(aes(color=group),size=6) +
     theme_classic() +
-    scale_color_manual(values = c('#7030A0','#049A68', '#FFC000')) +
+    scale_color_manual(values = c('#7030A0','#049A68','#FFC000')) +
     coord_cartesian(xlim = c(0,1.1), ylim = c(0,1), expand = FALSE) +
     labs(x = 'Prior standard deviation of subgroup ATEs',
          y = '',
@@ -43,9 +42,5 @@ makeBayesPlot = function(N,p,a1,tau,var_vals,rho_vals){
   
   print(fig)
   
-  # save plot
-  ggsave(fig, filename = 'output/bayes_varying_var_tau.png',
-         width = 12, height = 8, device='png', dpi=700)
-  
-  return(plot_data)
+  return(fig)
 }

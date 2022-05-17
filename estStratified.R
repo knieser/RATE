@@ -3,10 +3,7 @@ estStratified = function(df, trt, g, Ymodel){
   
   # get list of groups
   grps = sort(unique(df$g))
-  
-  # calculate residual variance for scaling
-  resid_var = (summary(lm(Ymodel,data=df))$sigma)^2
-  
+
   # initialize
   strat_est = 1:length(grps)
   strat_var = 1:length(grps)
@@ -19,6 +16,9 @@ estStratified = function(df, trt, g, Ymodel){
     strat_est[j] = summary(lm(Ymodel,data=sub_df))$coef[trt,1]
     # estimated variance
     strat_var[j] = (summary(lm(Ymodel,data=sub_df))$coef[trt,2])^2
+    
+    # g-computation estimates
+    # strat_est[j] = estOM(df, Ymodel)$ATE
   }
   
   estimates = data.frame(
@@ -27,8 +27,7 @@ estStratified = function(df, trt, g, Ymodel){
     std_err = sqrt(strat_var)
   )
   
-  output = list('estimates' = estimates,
-                'resid_var' = resid_var)
+  output = list(estimates=estimates)
   
   return(output)
   

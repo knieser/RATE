@@ -12,10 +12,9 @@ makeMinimaxPlot = function(N,p,a1,tau,delta_vals){
   strat_output <- estStratified(smp,"trt","g",Ymodel)
   strat_est = strat_output$estimates[,"estimate"]
   strat_var = (strat_output$estimates[,"std_err"])^2
-  varY = strat_output$resid_var
-  
+
   # synthetic sample estimates
-  est = estSynthetic_minimax(strat_est, strat_var, varY, delta_vals)
+  est = estSynthetic_minimax(strat_est, strat_var, delta_vals)
 
   # organize plot data
   plot_data = data.frame(
@@ -28,9 +27,9 @@ makeMinimaxPlot = function(N,p,a1,tau,delta_vals){
   fig <- ggplot(data=plot_data, aes(x=delta, y=q, group=group)) +
     geom_line(aes(color=group),size=6) +
     theme_classic() +
-    scale_color_manual(values = c('#7030A0','#049A68', '#FFC000')) +
+    scale_color_manual(values = c('#7030A0','#049A68','#FFC000')) +
     coord_cartesian(xlim = c(0,1.1), ylim = c(0,1), expand = FALSE) +
-    labs(x = 'Maximum standardized ATE difference',
+    labs(x = 'Maximum ATE difference',
          y = '',
          title = 'Synthetic sample proportions for Group 1') +
     theme(text = element_text(size=25, face = "bold"),
@@ -42,10 +41,6 @@ makeMinimaxPlot = function(N,p,a1,tau,delta_vals){
           legend.position = "top")
   
   print(fig)
-  
-  # save plot
-  ggsave(fig, filename = 'output/minimax_varying_delta.png',
-         width = 12, height = 8, device='png', dpi=700)
-  
-  return(plot_data)
+
+  return(fig)
 }

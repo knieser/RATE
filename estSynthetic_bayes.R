@@ -1,6 +1,6 @@
 # Bayes-based synthetic sample estimates
 
-estSynthetic_bayes <- function(strat_est, strat_var, varY, var_vals, rho_vals) {
+estSynthetic_bayes <- function(strat_est, strat_var, var_vals, rho_vals) {
 
   # get list of groups
   grps = 1:length(strat_est)
@@ -13,9 +13,9 @@ estSynthetic_bayes <- function(strat_est, strat_var, varY, var_vals, rho_vals) {
   for (j in 1:length(grps)){
     for (s in 1:length(var_vals)) {
       for (r in 1:length(rho_vals)){
-        V = sum(1/(var_vals[s] + strat_var)) - 1/(var_vals[s] + strat_var[j])
-        q[s,r,j,j] = (var_vals[s]*(1-rho_vals[r]) + 1/V) /
-          (var_vals[s]*(1-rho_vals[r]) + 1/V + strat_var[j])
+        V = (sum(1/(var_vals[s] + strat_var)) - 1/(var_vals[s] + strat_var[j]))^(-1)
+        q[s,r,j,j] = (var_vals[s]*(1-rho_vals[r]) + V) /
+          (var_vals[s]*(1-rho_vals[r]) + V + strat_var[j])
         q[s,r,j,-j] = (q[s,r,j,j]*(strat_var[j] + var_vals[s]*(1-rho_vals[r])) - var_vals[s]*(1-rho_vals[r])) /
           (var_vals[s] + strat_var[-j])
         est[s,r,j] = sum(q[s,r,j,]*strat_est)

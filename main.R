@@ -1,80 +1,74 @@
-##### Main script #####
-
-# clear variables
-rm(list=ls())
-
-# set seed
-set.seed(123)
-
-# set working directory
-setwd("~/Documents/research/Dissertation/Aim_3/code_repo")
-# load('output/.RData')
-
 # libraries
-library(lme4) 
-library(ggplot2)
+library(lme4)
+library(ggplot2) # plots
+library(viridis) # color scheme
+library(tictoc) # runtime tracking
 
 # functions
-source("estOM.R")
-source("estStratified.R")
-source("estSynthetic_minimax.R")
-source("estSynthetic_bayes.R")
+source("generate_tau.R")
 source("simulateData.R")
+source("computeMSE.R")
+source("compileMSE.R")
+source("simMain.R")
 source("runSimulations.R")
-source("makeMinimaxPlot.R")
-source("makeBayesPlot.R")
-source("makeForestPlot.R")
+source("estStratified.R")
+source("estRATE.R")
+source("estRATErange.R")
+source("MSEbarchart.R")
+source("summarizeMSE.R")
 
-# run simulations
-estimates1 <- runSimulations(N = 500, 
-                             p = c(0.10, 0.70, 0.20), 
-                             a1 = c(.5, .5, .5), 
-                             tau = c(1,-0.5,0.1),
-                             delta_vals = c(.5,1,1.5),
-                             var_vals = c(.5,1,1.5),
-                             loops = 1e4)
+# Create output folder in working directory 
+# if one doesn't already exist
+if (file.exists('output')){
+  cat("Output folder exists")
+} else{
+  cat("Creating an output folder")
+  dir.create('output')
+}
 
-estimates2 <- runSimulations(N = 500, 
-                             p = c(0.10, 0.70, 0.20), 
-                             a1 = c(.5, .5, .5), 
-                             tau = c(1,1,1), 
-                             delta_vals = c(0.5,1,1.5),
-                             var_vals = c(.5,1,1.5),
-                             loops = 1e4)
 
-estimates3 <- runSimulations(N = 500, 
-                             p = c(0.10, 0.85, 0.05), 
-                             a1 = c(.5, .5, .5), 
-                             tau = c(.5,-1,-2), 
-                             delta_vals = c(0.5,1,1.5),
-                             var_vals = c(.5,1,1.5),
-                             loops = 1e4)
+#### Simulations ####
 
-# make plots
-fig1 <- makeMinimaxPlot(N = 500, 
-                        p = c(0.10, 0.70, 0.20), 
-                        a1 = c(.5, .5, .5), 
-                        tau = c(1,-0.5,0),
-                        delta_vals = seq(0,2,.001))
-fig2 <- makeBayesPlot(N = 500, 
-                      p = c(0.10, 0.70, 0.20), 
-                      a1 = c(.5, .5, .5), 
-                      tau = c(1,-0.5,0), 
-                      var_vals = seq(0,3,.001), 
-                      rho_vals = 0.3)
-fig3 <- makeForestPlot(estimates1)
-fig4 <- makeForestPlot(estimates2)
-fig5 <- makeForestPlot(estimates3)
-
-# save plots
-ggsave(fig1, filename = 'output/minimax_varying_delta.png',
+# simulated example
+fig_example <- estRATErange(c(2, 1.6, .6), c(.05, .07, .4), 1, seq(0, 2, .01))
+ggsave(fig_example, 
+       filename = 'output/example.png',
        width = 12, height = 8, device='png', dpi=700)
-ggsave(fig2, filename = 'output/bayes_varying_var_tau.png',
+
+
+# Monte Carlo simulations
+sample_size = c(600)
+p = matrix(data = c(.7, .1, .1, .05, .05),
+           nrow = 5, ncol = 1)
+a1 = matrix(data = c(.5, .5, .5, .5, .5),
+            nrow = 5, ncol = 1)
+tau_draws = 10
+loops = 10
+
+
+# normal distribution
+tic()
+tau_dist = c("Normal")
+sim_normal <- simMain(sample_size, p, a1, tau_dist, tau_draws, 
+                    decision_rule = 1, delta = c(1,2,3)/sqrt(2), loops)
+fig_normal <- summarizeMSE(sim_normal)
+ggsave(fig_normal, 
+       filename = 'output/normal_sims.png',
        width = 12, height = 8, device='png', dpi=700)
-ggsave(fig3, filename = 'output/sim1_results.png',
+toc()
+
+
+# Skewed normal distribution
+tic()
+tau_dist = c("Skewed")
+sim_skewed <- simMain(sample_size, p, a1, tau_dist, tau_draws, 
+                      decision_rule = 1, delta = c(1,2,3)/sqrt(2), loops)
+fig_skewed <- summarizeMSE(sim_skewed)
+ggsave(fig_skewed, 
+       filename = 'output/skewed_sims.png',
        width = 12, height = 8, device='png', dpi=700)
-ggsave(fig4, filename = 'output/sim2_results.png',
-       width = 12, height = 8, device='png', dpi=700)
+toc()
 
 # save workspace
 save.image(file = 'output/.RData')
+

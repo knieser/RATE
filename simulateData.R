@@ -1,4 +1,3 @@
-
 simulateData = function(N,p,a1,tau){
   
   grps = 1:length(p)
@@ -16,8 +15,8 @@ simulateData = function(N,p,a1,tau){
   df$trt = rbinom(N,1,df$trt_p)
   
   # simulate outcomes 
-  df$beta  = tau[df$g]
-  df$y = 1 + df$beta*df$trt + df$g + df$z1 + df$z2 + df$z3 + rnorm(N,0,1)
-
+  df$beta = tau[df$g]
+  df$y = 1 + df$beta*df$trt + df$g + df$z1 + 2*df$z2 - df$z3 + rnorm(N,0,1)
+  
   return(df)
 }

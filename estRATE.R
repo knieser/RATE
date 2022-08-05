@@ -1,45 +1,35 @@
-estRATE <- function(strat_est, strat_SE, decision_rule, delta) {
+estRATE <- function(strat_est, strat_sigma, decision_rule, phi) {
 
   grps = 1:length(strat_est)
-  strat_var = strat_SE^2
-  
-  # pre-allocate
-  q = matrix(data=NA, ncol = length(grps), nrow = length(grps))
-  est = 1:length(grps)
-  SE = 1:length(grps)
+  ngrps = length(grps)
+  Q = matrix(data = NA, ncol = ngrps, nrow = ngrps)
   
   if (decision_rule == 1){
     # Bayes avg risk
-    for (j in 1:length(grps)){
-      B       = (sum(1/(delta^2 + strat_var)) - 1/(delta^2 + strat_var[j]))^(-1)
-      q[j,j]  = (delta^2 + B) / (delta^2 + B + strat_var[j])
-      q[j,-j] = (1 - q[j,j]) * B / (delta^2 + strat_var[-j])
-      est[j]  = sum(q[j,]*strat_est)
-      SE[j]   = sqrt(sum(q[j,]^2*strat_var))
+    W = phi^2 * solve(2*strat_sigma + phi^2*diag(ngrps))
+    for (j in 1:ngrps){
+      Q[j,] = (1 - sum(W[,j])) * rowSums(W) / sum(W) + W[,j]
     }
   } else if (decision_rule == 2){
-      # minimax risk
-      for (j in 1:length(grps)){
-        V       = (sum(1/strat_var) - 1/strat_var[j])^(-1)
-        q[j,j]  = (delta^2 + V) / (delta^2 + V + strat_var[j])
-        q[j,-j] = (1 - q[d,j,j]) * V / strat_var[-j]
-        est[j]  = sum(q[j,]*strat_est)
-        SE[j]   = sqrt(sum(q[j,]^2*strat_SE^2))
-      }
+    # minimax risk
+    for (j in 1:ngrps){
+      eeT = diag(ngrps)[j,] %*% t(diag(ngrps)[j,])
+      W = phi^2 * solve(strat_sigma + phi^2*eeT)
+      Q[j,] = (1 - sum(W[,j])) * rowSums(W) / sum(W) + W[,j]
     }
+  }
   
-  output = data.frame(
-    group = grps,
-    estimates = est,
-    SE = SE
-  )
-  output <- list('q' = q,
+  RATE_est = Q %*% strat_est
+  RATE_sigma = Q %*% strat_sigma %*% t(Q)
+  RATE_SE = sqrt(diag(RATE_sigma))
+  
+  output <- list('Q' = Q,
                  'estimates' = data.frame(
                    group = grps,
-                   est = est,
-                   SE = SE, 
-                   ci_lower = est - 1.96*SE,
-                   ci_upper = est + 1.96*SE)
+                   est = RATE_est,
+                   SE = RATE_SE, 
+                   ci_lower = RATE_est - 1.96*RATE_SE,
+                   ci_upper = RATE_est + 1.96*RATE_SE)
                  )
   return(output)
 }

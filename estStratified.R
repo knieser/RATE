@@ -1,6 +1,3 @@
-# simple stratified regression
-# would like to add g-formula and IPW estimators and their SEs.
-
 estStratified = function(df, trt, g, Ymodel){
   
   # get list of groups

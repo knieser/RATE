@@ -1,4 +1,4 @@
-simulateData = function(N,p,a1,tau){
+simulateData = function(N,p,tau){
   
   grps = 1:length(p)
   grp_size = N*p
@@ -6,11 +6,11 @@ simulateData = function(N,p,a1,tau){
   # generate group and baseline covariates
   df <- data.frame(
     g = as.factor(rep(grps, grp_size)),
-    x1 = rnorm(N, 0, 1),
-    x2 = rbinom(N, 1, .3),
-    trt = rep(0,N)
+    trt = rep(0,N),
+    x1 = rnorm(N,1,1),
+    x2 = rbinom(N,1,.3)
   )
-  
+
   # random allocation of treatment by group
   for (g in grps){
     subdf = df[df$g==g,]
@@ -21,7 +21,8 @@ simulateData = function(N,p,a1,tau){
   
   # simulate outcomes 
   df$beta = tau[df$g]
-  df$y = 1 + df$beta*df$trt + 2*(df$g %in% c(1,3)) +
+  
+  df$y = 1 + df$beta*df$trt + 2*as.numeric(df$g %in% c(1,3)) +
    1*df$x1 + 2.5*df$x2 + rnorm(N,0,1)
   
   return(df)

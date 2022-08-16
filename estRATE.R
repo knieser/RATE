@@ -1,12 +1,12 @@
-estRATE <- function(strat_est, strat_sigma, decision_rule, phi) {
+estRATE <- function(estimates, sigma, decision_rule, phi) {
 
-  grps = 1:length(strat_est)
+  grps = 1:length(estimates)
   ngrps = length(grps)
   Q = matrix(data = NA, ncol = ngrps, nrow = ngrps)
   
   if (decision_rule == 1){
     # Bayes avg risk
-    W = phi^2 * solve(2*strat_sigma + phi^2*diag(ngrps))
+    W = phi^2 * solve(2*sigma + phi^2*diag(ngrps))
     for (j in 1:ngrps){
       Q[j,] = (1 - sum(W[,j])) * rowSums(W) / sum(W) + W[,j]
     }
@@ -14,13 +14,13 @@ estRATE <- function(strat_est, strat_sigma, decision_rule, phi) {
     # minimax risk
     for (j in 1:ngrps){
       eeT = diag(ngrps)[j,] %*% t(diag(ngrps)[j,])
-      W = phi^2 * solve(strat_sigma + phi^2*eeT)
+      W = phi^2 * solve(sigma + phi^2*eeT)
       Q[j,] = (1 - sum(W[,j])) * rowSums(W) / sum(W) + W[,j]
     }
   }
   
-  RATE_est = Q %*% strat_est
-  RATE_sigma = Q %*% strat_sigma %*% t(Q)
+  RATE_est = Q %*% estimates
+  RATE_sigma = Q %*% sigma %*% t(Q)
   RATE_SE = sqrt(diag(RATE_sigma))
   
   output <- list('Q' = Q,
@@ -29,7 +29,8 @@ estRATE <- function(strat_est, strat_sigma, decision_rule, phi) {
                    est = RATE_est,
                    SE = RATE_SE, 
                    ci_lower = RATE_est - 1.96*RATE_SE,
-                   ci_upper = RATE_est + 1.96*RATE_SE)
+                   ci_upper = RATE_est + 1.96*RATE_SE,
+                   ci_width = 2*1.96*RATE_SE)
                  )
   return(output)
 }

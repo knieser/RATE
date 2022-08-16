@@ -1,75 +1,90 @@
-runSimulations = function(N, p, a1, tau, decision_rule, phi, loops){
+runSimulations = function(N, p, tau, decision_rule, phi, loops){
   
   grps = 1:length(p)
+  ngrps = length(grps)
+  
+  # models to fit
+  Ymodel_overall = y ~ trt + g + x1 + x2
+  Ymodel_strat   = y ~ trt + x1 + x2
+  Ymodel_reg     = y ~ trt + g + x1 + x2 + g*trt
+  Ymodel_re      = y ~ trt + g + x1 + x2 + (trt|g)
   
   # initialize
-  overall_est      = array(data=NA, dim=c(loops, length(grps)))
-  strat_est        = array(data=NA, dim=c(loops, length(grps)))
-  strat_SE         = array(data=NA, dim=c(loops, length(grps)))
-  re_est           = array(data=NA, dim=c(loops, length(grps)))
-  rate_est_1       = array(data=NA, dim=c(loops, length(grps)))
-  rate_est_2       = array(data=NA, dim=c(loops, length(grps)))
-  rate_est_3       = array(data=NA, dim=c(loops, length(grps)))
-  rate_est_1_se    = array(data=NA, dim=c(loops, length(grps)))
-  rate_est_2_se    = array(data=NA, dim=c(loops, length(grps)))
-  rate_est_3_se    = array(data=NA, dim=c(loops, length(grps)))
+  overall_est = array(data=NA, dim=c(loops, ngrps))
+  strat_est   = array(data=NA, dim=c(loops, ngrps))
+  strat_SE    = array(data=NA, dim=c(loops, ngrps))
+  reg_est     = array(data=NA, dim=c(loops, ngrps))
+  reg_SE      = array(data=NA, dim=c(loops, ngrps))
+  re_est      = array(data=NA, dim=c(loops, ngrps))
+  rate1_est   = array(data=NA, dim=c(loops, ngrps))
+  rate2_est   = array(data=NA, dim=c(loops, ngrps))
+  rate3_est   = array(data=NA, dim=c(loops, ngrps))
+  rate1_se    = array(data=NA, dim=c(loops, ngrps))
+  rate2_se    = array(data=NA, dim=c(loops, ngrps))
+  rate3_se    = array(data=NA, dim=c(loops, ngrps))
 
   for(l in 1:loops){
-   
+
     # simulate data
-    smp = simulateData(N, p, a1, tau)
+    df <- simulateData(N, p, tau)
     
     # overall estimates
-    overall_est[l,] = rep(summary(lm(y ~ trt + g + x1 + x2,
-                        data=smp))$coef["trt",1],length(grps))
+    m0 <- lm(Ymodel_overall, data = df)
+    overall_est[l,] = rep(summary(m0)$coef["trt",1],length(grps))
 
     # stratified estimates 
-    strat_output <- estStratified(smp,"trt","g",y ~ trt + x1 + x2)
+    strat_output <- estStratified(df,"trt","g", Ymodel_strat)
     strat_est[l,] = strat_output$est
     strat_SE[l,]  = strat_output$SE
+    
+    # regression estimates
+    m1 <- lm(Ymodel_reg, data = df)
+    trt_coefs = grep("trt:g*",names(coef(m1)),value=1)
+    reg_output <- glht(m1, linfct = c("trt=0", 
+                                      paste0("trt+",trt_coefs, "=0")))
+    reg_est[l,] = as.vector(coef(reg_output))
+    reg_vcov    = vcov(reg_output)
+    reg_SE[l,]  = sqrt(diag(reg_vcov))
 
     # random effects estimates
-    re_model <- lmer(y ~ trt + g + x1 + x2 + (trt|g), data=smp,
+    re_model <- lmer(Ymodel_re, data=df,
         control=lmerControl(check.conv.singular = .makeCC(action = "ignore",  tol = 1e-4)))
     re_est[l,] = coef(re_model)$g[,2]
     
     # RATE estimates
-    strat_sigma = diag(strat_SE[l,]^2) 
-
-    rate_1_output <- estRATE(strat_est[l,], strat_sigma, decision_rule, phi[1])
-    rate_est_1[l,] = rate_1_output$estimates$est
-    rate_est_1_se[l,] = rate_1_output$estimates$SE
-    
-    rate_2_output <- estRATE(strat_est[l,], strat_sigma, decision_rule, phi[2])
-    rate_est_2[l,] = rate_2_output$estimates$est
-    rate_est_2_se[l,] = rate_2_output$estimates$SE
-    
-    rate_3_output <- estRATE(strat_est[l,], strat_sigma, decision_rule, phi[3])
-    rate_est_3[l,] = rate_3_output$estimates$est
-    rate_est_3_se[l,] = rate_3_output$estimates$SE
+    rate1_output  = estRATE(reg_est[l,], reg_vcov, decision_rule, phi[1])
+    rate1_est[l,] = rate1_output$estimates$est
+    rate1_se[l,]  = rate1_output$estimates$SE
+    rate2_output  = estRATE(reg_est[l,], reg_vcov, decision_rule, phi[2])
+    rate2_est[l,] = rate2_output$estimates$est
+    rate2_se[l,]  = rate2_output$estimates$SE
+    rate3_output  = estRATE(reg_est[l,], reg_vcov, decision_rule, phi[3])
+    rate3_est[l,] = rate3_output$estimates$est
+    rate3_se[l,]  = rate3_output$estimates$SE
   }
   
   # compile results
   parameters = list(
     N = N,
     p = p,
-    a1 = a1,
     tau = tau,
     phi = phi
   )
   
   output = list(
     parameters = parameters,
-    SATE = overall_est,
-    strat = strat_est,
-    strat_SE = strat_SE,
-    re = re_est,
-    RATE_1 = rate_est_1,
-    RATE_1_SE = rate_est_1_se,
-    RATE_2 = rate_est_2,
-    RATE_2_SE = rate_est_2_se,
-    RATE_3 = rate_est_3,
-    RATE_3_SE = rate_est_3_se
+    SATE       = overall_est,
+    strat      = strat_est,
+    strat_SE   = strat_SE,
+    reg        = reg_est,
+    reg_SE     = reg_SE,
+    re         = re_est,
+    RATE1      = rate1_est,
+    RATE1_SE   = rate1_se,
+    RATE2      = rate2_est,
+    RATE2_SE   = rate2_se,
+    RATE3      = rate3_est,
+    RATE3_SE   = rate3_se
   )
   
   return(output)

@@ -2,12 +2,9 @@ checkConvergence <- function(df){
 
   df$group_est = paste(df$group, df$estimator)
   sims = table(df$group_est)
-  running_25 = data.frame(
-    iter = 1:max(sims))
-  running_50 = data.frame(
-    iter = 1:max(sims))
-  running_75 = data.frame(
-    iter = 1:max(sims))
+  running_25 = data.frame(iter = 1:max(sims))
+  running_50 = data.frame(iter = 1:max(sims))
+  running_75 = data.frame(iter = 1:max(sims))
   
   for (s in 1:length(sims)){
     group_est = names(sims)[s]

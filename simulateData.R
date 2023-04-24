@@ -1,4 +1,4 @@
-simulateData = function(N,p,tau){
+simulateData = function(N, p, tau, noise){
   
   grps = 1:length(p)
   grp_size = N*p
@@ -21,9 +21,10 @@ simulateData = function(N,p,tau){
   
   # simulate outcomes 
   df$beta = tau[df$g]
+  noise_sd = noise[df$g]
   
   df$y = 1 + df$beta*df$trt + 2*as.numeric(df$g %in% c(1,3)) +
-   1*df$x1 + 2.5*df$x2 + rnorm(N,0,1)
+   1*df$x1 + 2.5*df$x2 + rnorm(N,0,noise_sd)
   
   return(df)
 }

@@ -6,8 +6,8 @@ estRATE <- function(estimates, sigma, decision_rule, phi) {
   
   if (decision_rule == 1){
     # Bayes avg risk
-    W = phi^2 * solve(2*sigma + phi^2*diag(ngrps))
     for (j in 1:ngrps){
+      W = (phi^2) * solve(2*sigma + phi^2*diag(ngrps))
       Q[j,] = (1 - sum(W[,j])) * rowSums(W) / sum(W) + W[,j]
     }
   } else if (decision_rule == 2){
@@ -23,7 +23,8 @@ estRATE <- function(estimates, sigma, decision_rule, phi) {
   RATE_sigma = Q %*% sigma %*% t(Q)
   RATE_SE = sqrt(diag(RATE_sigma))
   
-  output <- list('Q' = Q,
+  output <- list('q' = diag(Q),
+                 'fullQ' = Q,
                  'estimates' = data.frame(
                    group = grps,
                    est = RATE_est,

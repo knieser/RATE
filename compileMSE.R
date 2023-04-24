@@ -10,14 +10,17 @@ compileMSE <- function(est){
     RATE1_MSE = computeMSE(sim$RATE1, tau)
     RATE2_MSE = computeMSE(sim$RATE2, tau)
     RATE3_MSE = computeMSE(sim$RATE3, tau)
+    RATEequal_MSE = computeMSE(sim$RATEequal, tau)
     
     # store MSEs with estimates
+    est[[j]]$SATE_MSE  = SATE_MSE
     est[[j]]$strat_MSE = strat_MSE
     est[[j]]$reg_MSE   = reg_MSE
     est[[j]]$re_MSE    = re_MSE
     est[[j]]$RATE1_MSE = RATE1_MSE
     est[[j]]$RATE2_MSE = RATE2_MSE
     est[[j]]$RATE3_MSE = RATE3_MSE
+    est[[j]]$RATEequal_MSE = RATEequal_MSE
   }
   
   return(est)

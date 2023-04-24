@@ -1,4 +1,4 @@
-simMain <- function(N, p, tau_dist, tau_draws,
+simMain <- function(N, p, tau_dist, tau_draws, noise,
                     decision_rule, phi, loops){
   
   ngrps = length(p)
@@ -11,13 +11,11 @@ simMain <- function(N, p, tau_dist, tau_draws,
   for (j in 1:tau_draws){
     message("Running simulation ", j, " out of ", tau_draws)
     tic()
-    est[[j]] <- runSimulations(N, p, tau[j,], decision_rule, phi, loops)
+    est[[j]] <- runSimulations(N, p, tau[j,], noise, decision_rule, phi, loops)
     toc()
     }
  
  # compile results for each tau draw     
  results <- compileMSE(est)
-
  return(results)
-  
 }
